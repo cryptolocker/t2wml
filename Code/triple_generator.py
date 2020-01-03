@@ -12,6 +12,30 @@ from Code.utility_functions import get_property_type, translate_precision_to_int
 from Code.property_type_map import property_type_map as property_type_dict
 
 
+def place_value(number):
+    return ("{:,}".format(int(number)))
+
+
+def checkNumberValidity(property_value: str) -> bool:
+    property_value_split_by_decimal = property_value.split('.')
+    if (len(property_value_split_by_decimal) > 2):
+        return False
+
+    if (len(property_value_split_by_decimal) == 2):
+        if not (property_value_split_by_decimal[1].isdigit()):
+            return False
+
+    if (property_value_split_by_decimal[0].replace(',', '').isdigit()):
+        format_val = property_value_split_by_decimal[0].replace(',', '')
+        format_val_with_comma = place_value(format_val)
+        if not (format_val_with_comma == property_value_split_by_decimal[0]):
+            return False
+    else:
+        return False
+
+    return True
+
+
 def generate_triples(user_id: str, resolved_excel: list, sparql_endpoint: str, filetype: str = 'ttl',
                      created_by: str = 't2wml') -> str:
     """
@@ -41,13 +65,16 @@ def generate_triples(user_id: str, resolved_excel: list, sparql_endpoint: str, f
     doc.kg.bind('p', 'http://www.wikidata.org/prop/')
     doc.kg.bind('pr', 'http://www.wikidata.org/prop/reference/')
     doc.kg.bind('prv', 'http://www.wikidata.org/prop/reference/value/')
-    doc.kg.bind('prn', 'http://www.wikidata.org/prop/reference/value-normalized/')
+    doc.kg.bind(
+        'prn', 'http://www.wikidata.org/prop/reference/value-normalized/')
     doc.kg.bind('ps', 'http://www.wikidata.org/prop/statement/')
     doc.kg.bind('psv', 'http://www.wikidata.org/prop/statement/value/')
-    doc.kg.bind('psn', 'http://www.wikidata.org/prop/statement/value-normalized/')
+    doc.kg.bind(
+        'psn', 'http://www.wikidata.org/prop/statement/value-normalized/')
     doc.kg.bind('pq', 'http://www.wikidata.org/prop/qualifier/')
     doc.kg.bind('pqv', 'http://www.wikidata.org/prop/qualifier/value/')
-    doc.kg.bind('pqn', 'http://www.wikidata.org/prop/qualifier/value-normalized/')
+    doc.kg.bind(
+        'pqn', 'http://www.wikidata.org/prop/qualifier/value-normalized/')
     doc.kg.bind('skos', 'http://www.w3.org/2004/02/skos/core#')
     doc.kg.bind('prov', 'http://www.w3.org/ns/prov#')
     doc.kg.bind('schema', 'http://schema.org/')
@@ -57,13 +84,16 @@ def generate_triples(user_id: str, resolved_excel: list, sparql_endpoint: str, f
     for i in resolved_excel:
         _item = i["statement"]["item"]
         if _item is not None:
-            item = WDItem(_item, creator='http://www.isi.edu/{}'.format(created_by))
+            item = WDItem(
+                _item, creator='http://www.isi.edu/{}'.format(created_by))
             try:
                 property_type = property_type_map[i["statement"]["property"]]
             except KeyError:
-                property_type = get_property_type(i["statement"]["property"], sparql_endpoint)
+                property_type = get_property_type(
+                    i["statement"]["property"], sparql_endpoint)
                 if property_type != "Property Not Found" and i["statement"]["property"] not in property_type_map:
-                    property_type_map[i["statement"]["property"]] = property_type
+                    property_type_map[i["statement"]
+                                      ["property"]] = property_type
             if property_type == "WikibaseItem":
                 value = Item(str(i["statement"]["value"]))
             elif property_type == "WikibaseProperty":
@@ -72,16 +102,23 @@ def generate_triples(user_id: str, resolved_excel: list, sparql_endpoint: str, f
                 value = StringValue(i["statement"]["value"])
             elif property_type == "Quantity":
                 _value = i["statement"]["value"]
-                _value = str(_value).replace(',', '')
-                value = QuantityValue(_value)
+                _value = str(_value)
+                isValid = checkNumberValidity(_value)
+                if not (isValid):
+                    print("Invalid Number found - {}".format(_value))
+                    value = QuantityValue(_value)
+                else:
+                    value = QuantityValue(_value.replace(',', ''))
             elif property_type == "Time":
                 value = TimeValue(str(i["statement"]["value"]), Item(i["statement"]["calendar"]),
-                                  translate_precision_to_integer(i["statement"]["precision"]),
-                                  i["statement"]["time_zone"])
+                                  translate_precision_to_integer(
+                    i["statement"]["precision"]),
+                    i["statement"]["time_zone"])
             elif property_type == "Url":
                 value = URLValue(i["statement"]["value"])
             elif property_type == "Monolingualtext":
-                value = MonolingualText(i["statement"]["value"], i["statement"]["lang"])
+                value = MonolingualText(
+                    i["statement"]["value"], i["statement"]["lang"])
             elif property_type == "ExternalId":
                 value = ExternalIdentifier(i["statement"]["value"])
             elif property_type == "GlobeCoordinate":
@@ -99,9 +136,11 @@ def generate_triples(user_id: str, resolved_excel: list, sparql_endpoint: str, f
                         property_type = property_type_map[j["property"]]
 
                     except KeyError:
-                        property_type = get_property_type(j["property"], sparql_endpoint)
+                        property_type = get_property_type(
+                            j["property"], sparql_endpoint)
                         if property_type != "Property Not Found" and i["statement"]["property"] not in property_type_map:
-                            property_type_map[i["statement"]["property"]] = property_type
+                            property_type_map[i["statement"]
+                                              ["property"]] = property_type
                     if property_type == "WikibaseItem":
                         value = Item(str(j["value"]))
                     elif property_type == "WikibaseProperty":
@@ -116,11 +155,12 @@ def generate_triples(user_id: str, resolved_excel: list, sparql_endpoint: str, f
                         if _value == "":
                             value = None
                         elif _value_no_decimal.isnumeric():
-                          value = QuantityValue(_value)
+                            value = QuantityValue(_value)
                         else:
                             value = None
                     elif property_type == "Time":
-                        value = TimeValue(str(j["value"]), Item(j["calendar"]), j["precision"], j["time_zone"])
+                        value = TimeValue(str(j["value"]), Item(
+                            j["calendar"]), j["precision"], j["time_zone"])
                     elif property_type == "Url":
                         value = URLValue(j["value"])
                     elif property_type == "Monolingualtext":
@@ -128,15 +168,18 @@ def generate_triples(user_id: str, resolved_excel: list, sparql_endpoint: str, f
                     elif property_type == "ExternalId":
                         value = ExternalIdentifier(j["value"])
                     elif property_type == "GlobeCoordinate":
-                        value = GlobeCoordinate(j["latitude"], j["longitude"], j["precision"])
+                        value = GlobeCoordinate(
+                            j["latitude"], j["longitude"], j["precision"])
                     elif property_type == "Property Not Found":
                         is_error = True
                     if value:
                         s.add_qualifier(j["property"], value)
                     else:
-                        print("Invalid numeric value '{}' in cell {}".format(j["value"], j["cell"]))
-                        print("Skipping qualifier {} for cell {}".format(j["property"], i["cell"]))
-                        
+                        print("Invalid numeric value '{}' in cell {}".format(
+                            j["value"], j["cell"]))
+                        print("Skipping qualifier {} for cell {}".format(
+                            j["property"], i["cell"]))
+
             doc.kg.add_subject(s)
     if not is_error:
         data = doc.kg.serialize(filetype)

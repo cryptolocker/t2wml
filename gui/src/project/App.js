@@ -876,6 +876,14 @@ class TableViewer extends React.Component {
         } else {
           rowData2[row]["styles"][col] = Object.assign({}, rowData2[row]["styles"][col], presets[styleName]); // combine old and new styles
         }
+        if (styleName === 'dataRegion') {
+          const errorStyle = { borderColor: "red" };
+          let dataVal = rowData2[row][col];
+          if (this.checkInValid(dataVal)) {
+            rowData2[row]["styles"][col] = Object.assign({}, rowData2[row]["styles"][col], errorStyle);
+          }
+
+        }
       }
     }
     this.setState({
@@ -883,6 +891,31 @@ class TableViewer extends React.Component {
     });
     // TODO: check this part
     this.gridApi.setRowData(rowData2);
+  }
+
+  checkInValid(dataVal) {
+    let dataValDecimalArray = dataVal.split('.')
+    const dataValDecimalArrayLen = dataValDecimalArray.length
+
+    if (dataValDecimalArrayLen > 2) {
+      return true
+    }
+    if (dataValDecimalArrayLen === 2) {
+      if (isNaN(dataValDecimalArray[1])) {
+        return true
+      }
+    }
+
+    if (isNaN(dataValDecimalArray[0].replace(/,/g, ''))) {
+      return true;
+    } else {
+      let numberFormatted = dataValDecimalArray[0].replace(/,/g, '')
+      numberFormatted = numberFormatted.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      if ( numberFormatted !== dataValDecimalArray[0]) {
+        return true;
+      }
+    }
+    return false;
   }
 
   updateTableData(tableData) {

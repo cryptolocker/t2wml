@@ -14,8 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-
-  "/t2wml-gui/precache-manifest.719d2bb0076fe21bd4335b6076eb1969.js"
+  "/t2wml-gui/precache-manifest.695400276d260938e6e63fdfbdcff5ae.js"
 );
 
 self.addEventListener('message', (event) => {
@@ -36,5 +35,5 @@ workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
 
 workbox.routing.registerNavigationRoute(workbox.precaching.getCacheKeyForURL("/t2wml-gui/index.html"), {
   
-  blacklist: [/^\/_/,/\/[^/]+\.[^/]+$/],
+  blacklist: [/^\/_/,/\/[^\/]+\.[^\/]+$/],
 });
